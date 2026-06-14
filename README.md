@@ -13,6 +13,7 @@ workflows/
   document-processing.yaml # Procesamiento de documento con pasos en paralelo
   loan-approval.yaml       # Aprobación de préstamo con pasos condicionales
   payment-processing.yaml  # Procesamiento de pago con reintentos y timeout
+  travel-booking.yaml      # Reserva de viaje con compensación (rollback)
 ```
 
 ## Formato

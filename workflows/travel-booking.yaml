@@ -1,0 +1,51 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/miguelperezcolom/eventconductor/main/modules/workflow-engine/src/main/resources/workflow-definition-schema.json
+id: travel-booking
+name: Travel Booking
+version: 1
+status: ACTIVE
+steps:
+  # Main flow
+  - id: reserve-hotel
+    type: ACTION
+    name: Reserve hotel
+    rollbackable: true
+    compensationStepId: cancel-hotel
+
+  - id: book-flight
+    type: ACTION
+    name: Book flight
+    preconditionStepId: reserve-hotel
+    rollbackable: true
+    compensationStepId: cancel-flight
+
+  - id: charge-payment
+    type: ACTION
+    name: Charge payment
+    preconditionStepId: book-flight
+    timeout: PT30S
+    retries: 2
+    rollbackable: true
+    compensationStepId: refund-payment
+
+  - id: send-confirmation
+    type: ACTION
+    name: Send booking confirmation
+    preconditionStepId: charge-payment
+
+  - id: end
+    type: END
+    name: Done
+    preconditionStepId: send-confirmation
+
+  # Compensation steps (triggered automatically on failure)
+  - id: cancel-hotel
+    type: ACTION
+    name: Cancel hotel reservation
+
+  - id: cancel-flight
+    type: ACTION
+    name: Cancel flight booking
+
+  - id: refund-payment
+    type: ACTION
+    name: Refund payment
