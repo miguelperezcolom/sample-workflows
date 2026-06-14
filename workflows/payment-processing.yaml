@@ -1,0 +1,37 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/miguelperezcolom/eventconductor/main/modules/workflow-engine/src/main/resources/workflow-definition-schema.json
+id: payment-processing
+name: Payment Processing
+version: 1
+status: ACTIVE
+steps:
+  - id: validate-payment
+    type: ACTION
+    name: Validate payment data
+    timeout: PT10S
+    retries: 2
+
+  - id: charge-card
+    type: ACTION
+    name: Charge credit card
+    preconditionStepId: validate-payment
+    timeout: PT30S
+    retries: 3
+
+  - id: send-receipt
+    type: ACTION
+    name: Send receipt to customer
+    preconditionStepId: charge-card
+    timeout: PT15S
+    retries: 2
+
+  - id: update-inventory
+    type: ACTION
+    name: Update inventory
+    preconditionStepId: charge-card
+    timeout: PT20S
+    retries: 3
+
+  - id: end
+    type: END
+    name: Done
+    preconditionStepId: send-receipt
