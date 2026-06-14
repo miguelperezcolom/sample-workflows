@@ -1,0 +1,25 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/miguelperezcolom/eventconductor/main/modules/workflow-engine/src/main/resources/workflow-definition-schema.json
+id: approval
+name: Approval Process
+version: 1
+status: ACTIVE
+steps:
+  - id: submit
+    type: ACTION
+    name: Submit request
+  - id: review
+    type: ACTION
+    name: Review request
+    preconditionStepId: submit
+  - id: approve
+    type: ACTION
+    name: Approve request
+    preconditionStepId: review
+  - id: notify
+    type: ACTION
+    name: Notify requester
+    preconditionStepId: approve
+  - id: end
+    type: END
+    name: Done
+    preconditionStepId: notify

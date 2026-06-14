@@ -1,0 +1,33 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/miguelperezcolom/eventconductor/main/modules/workflow-engine/src/main/resources/workflow-definition-schema.json
+id: order-processing
+name: Order Processing
+version: 1
+status: ACTIVE
+steps:
+  - id: receive-order
+    type: ACTION
+    name: Receive order
+  - id: validate-order
+    type: ACTION
+    name: Validate order
+    preconditionStepId: receive-order
+  - id: charge-payment
+    type: ACTION
+    name: Charge payment
+    preconditionStepId: validate-order
+  - id: prepare-shipment
+    type: ACTION
+    name: Prepare shipment
+    preconditionStepId: charge-payment
+  - id: ship-order
+    type: ACTION
+    name: Ship order
+    preconditionStepId: prepare-shipment
+  - id: notify-customer
+    type: ACTION
+    name: Notify customer
+    preconditionStepId: ship-order
+  - id: end
+    type: END
+    name: Done
+    preconditionStepId: notify-customer

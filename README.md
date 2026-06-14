@@ -6,7 +6,10 @@ Colección de definiciones de workflows de ejemplo para [eventconductor](https:/
 
 ```
 workflows/
-  hello-world.yaml   # Workflow básico de ejemplo
+  hello-world.yaml      # Workflow básico de ejemplo
+  approval.yaml         # Proceso de aprobación
+  onboarding.yaml       # Alta de nuevo usuario
+  order-processing.yaml # Procesamiento de pedido
 ```
 
 ## Formato

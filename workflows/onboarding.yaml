@@ -1,0 +1,25 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/miguelperezcolom/eventconductor/main/modules/workflow-engine/src/main/resources/workflow-definition-schema.json
+id: onboarding
+name: User Onboarding
+version: 1
+status: ACTIVE
+steps:
+  - id: create-account
+    type: ACTION
+    name: Create user account
+  - id: send-welcome-email
+    type: ACTION
+    name: Send welcome email
+    preconditionStepId: create-account
+  - id: assign-role
+    type: ACTION
+    name: Assign default role
+    preconditionStepId: create-account
+  - id: setup-profile
+    type: ACTION
+    name: Set up user profile
+    preconditionStepId: assign-role
+  - id: end
+    type: END
+    name: Done
+    preconditionStepId: setup-profile
