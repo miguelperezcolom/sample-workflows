@@ -1,0 +1,71 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/miguelperezcolom/eventconductor/main/modules/workflow-engine/src/main/resources/workflow-definition-schema.json
+id: kyc-verification
+name: KYC Verification
+version: 1
+status: ACTIVE
+steps:
+  - id: submit-documents
+    type: ACTION
+    name: Customer submits identity documents
+    topic: kyc.documents.submitted
+
+  # Run document and identity checks in parallel
+  - id: verify-documents
+    type: PROCESS
+    name: Verify document authenticity
+    preconditionStepId: submit-documents
+    childWorkflowDefinitionId: document-verification
+    parallel: true
+    timeout: PT2M
+    retries: 2
+
+  - id: check-sanctions
+    type: ACTION
+    name: Check sanctions and PEP lists
+    preconditionStepId: submit-documents
+    topic: kyc.sanctions.check
+    parallel: true
+    timeout: PT1M
+    retries: 3
+
+  - id: assess-risk
+    type: ACTION
+    name: Calculate risk score
+    preconditionStepId: verify-documents
+    topic: kyc.risk.assess
+    timeout: PT30S
+    retries: 2
+
+  # High-risk customers require manual compliance review
+  - id: compliance-review
+    type: USER_TASK
+    name: Compliance officer reviews application
+    preconditionStepId: assess-risk
+    formId: compliance-review-form
+    preconditionExpression: riskScore > 70
+    timeout: P5D
+
+  - id: approve-account
+    type: ACTION
+    name: Approve and activate account
+    preconditionStepId: assess-risk
+    topic: kyc.account.approved
+    preconditionExpression: riskScore <= 70
+
+  - id: reject-account
+    type: ACTION
+    name: Reject account application
+    preconditionStepId: compliance-review
+    topic: kyc.account.rejected
+    preconditionExpression: complianceDecision == 'REJECTED'
+
+  - id: notify-customer
+    type: ACTION
+    name: Notify customer of outcome
+    preconditionStepId: approve-account
+    topic: notifications.email
+
+  - id: end
+    type: END
+    name: Done
+    preconditionStepId: notify-customer

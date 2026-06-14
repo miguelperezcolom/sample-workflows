@@ -1,0 +1,75 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/miguelperezcolom/eventconductor/main/modules/workflow-engine/src/main/resources/workflow-definition-schema.json
+id: content-publishing
+name: Content Publishing
+version: 1
+status: ACTIVE
+steps:
+  - id: submit-content
+    type: ACTION
+    name: Author submits content
+    topic: content.submitted
+
+  - id: editorial-review
+    type: USER_TASK
+    name: Editor reviews content
+    preconditionStepId: submit-content
+    formId: editorial-review-form
+    timeout: P2D
+
+  - id: request-changes
+    type: ACTION
+    name: Request changes from author
+    preconditionStepId: editorial-review
+    topic: content.changes-requested
+    preconditionExpression: editorialDecision == 'CHANGES_REQUESTED'
+
+  # Run SEO check and legal review in parallel after approval
+  - id: seo-check
+    type: PROCESS
+    name: Run SEO analysis
+    preconditionStepId: editorial-review
+    childWorkflowDefinitionId: seo-analysis
+    preconditionExpression: editorialDecision == 'APPROVED'
+    parallel: true
+
+  - id: legal-review
+    type: USER_TASK
+    name: Legal team reviews content
+    preconditionStepId: editorial-review
+    formId: legal-review-form
+    preconditionExpression: editorialDecision == 'APPROVED' && requiresLegalReview == true
+    parallel: true
+    timeout: P3D
+
+  - id: schedule-publication
+    type: USER_TASK
+    name: Schedule publication date and channels
+    preconditionStepId: seo-check
+    formId: publication-schedule-form
+
+  - id: publish
+    type: ACTION
+    name: Publish content
+    preconditionStepId: schedule-publication
+    topic: content.publish
+    timeout: PT30S
+    retries: 3
+
+  - id: notify-subscribers
+    type: ACTION
+    name: Notify subscribers
+    preconditionStepId: publish
+    topic: notifications.subscribers
+    parallel: true
+
+  - id: post-to-social
+    type: ACTION
+    name: Post to social media
+    preconditionStepId: publish
+    topic: social.post
+    parallel: true
+
+  - id: end
+    type: END
+    name: Done
+    preconditionStepId: notify-subscribers

@@ -1,0 +1,90 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/miguelperezcolom/eventconductor/main/modules/workflow-engine/src/main/resources/workflow-definition-schema.json
+id: incident-management
+name: IT Incident Management
+version: 1
+status: ACTIVE
+steps:
+  - id: detect-incident
+    type: ACTION
+    name: Detect and register incident
+    topic: incident.detected
+
+  - id: assess-severity
+    type: ACTION
+    name: Assess incident severity
+    preconditionStepId: detect-incident
+    topic: incident.severity.assess
+    timeout: PT5M
+    retries: 2
+
+  # Critical incidents page the on-call engineer immediately
+  - id: page-oncall
+    type: ACTION
+    name: Page on-call engineer
+    preconditionStepId: assess-severity
+    topic: incident.oncall.page
+    preconditionExpression: severity == 'CRITICAL'
+
+  - id: notify-team
+    type: ACTION
+    name: Notify engineering team
+    preconditionStepId: assess-severity
+    topic: incident.team.notify
+    preconditionExpression: severity != 'CRITICAL'
+
+  - id: investigate
+    type: USER_TASK
+    name: Engineer investigates incident
+    preconditionStepId: page-oncall
+    formId: incident-investigation-form
+    timeout: PT4H
+
+  # Run mitigation and stakeholder comms in parallel
+  - id: apply-mitigation
+    type: ACTION
+    name: Apply mitigation or rollback
+    preconditionStepId: investigate
+    topic: incident.mitigation.apply
+    parallel: true
+    timeout: PT30M
+    retries: 3
+    rollbackable: true
+    compensationStepId: revert-mitigation
+
+  - id: notify-stakeholders
+    type: ACTION
+    name: Send status update to stakeholders
+    preconditionStepId: investigate
+    topic: incident.stakeholders.notify
+    parallel: true
+
+  - id: verify-resolution
+    type: USER_TASK
+    name: Verify service is restored
+    preconditionStepId: apply-mitigation
+    formId: resolution-verification-form
+    timeout: PT1H
+
+  - id: write-postmortem
+    type: USER_TASK
+    name: Write post-mortem report
+    preconditionStepId: verify-resolution
+    formId: postmortem-form
+    timeout: P3D
+
+  - id: close-incident
+    type: ACTION
+    name: Close incident
+    preconditionStepId: write-postmortem
+    topic: incident.closed
+
+  - id: end
+    type: END
+    name: Done
+    preconditionStepId: close-incident
+
+  # Compensation step
+  - id: revert-mitigation
+    type: ACTION
+    name: Revert failed mitigation
+    topic: incident.mitigation.revert

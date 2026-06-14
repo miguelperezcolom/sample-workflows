@@ -1,0 +1,61 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/miguelperezcolom/eventconductor/main/modules/workflow-engine/src/main/resources/workflow-definition-schema.json
+id: employee-offboarding
+name: Employee Offboarding
+version: 1
+status: ACTIVE
+steps:
+  - id: register-resignation
+    type: ACTION
+    name: Register resignation or termination
+    topic: hr.offboarding.start
+
+  - id: exit-interview
+    type: USER_TASK
+    name: Conduct exit interview
+    preconditionStepId: register-resignation
+    formId: exit-interview-form
+    timeout: P5D
+
+  # These three steps run in parallel after the exit interview
+  - id: revoke-access
+    type: ACTION
+    name: Revoke system access
+    preconditionStepId: exit-interview
+    topic: it.access.revoke
+    parallel: true
+    timeout: PT10S
+    retries: 3
+
+  - id: recover-equipment
+    type: USER_TASK
+    name: Recover company equipment
+    preconditionStepId: exit-interview
+    formId: equipment-return-form
+    parallel: true
+    timeout: P7D
+
+  - id: notify-payroll
+    type: ACTION
+    name: Notify payroll of last working day
+    preconditionStepId: exit-interview
+    topic: hr.payroll.offboarding
+    parallel: true
+
+  - id: process-final-payment
+    type: ACTION
+    name: Process final paycheck and settlements
+    preconditionStepId: notify-payroll
+    topic: payroll.final-payment
+    timeout: PT1H
+    retries: 2
+
+  - id: archive-records
+    type: ACTION
+    name: Archive employee records
+    preconditionStepId: revoke-access
+    topic: hr.records.archive
+
+  - id: end
+    type: END
+    name: Done
+    preconditionStepId: archive-records

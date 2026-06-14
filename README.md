@@ -18,6 +18,11 @@ Colección de definiciones de workflows de ejemplo para [eventconductor](https:/
 | `new-employee-setup.yaml` | Alta de empleado | Pasos en paralelo, `PROCESS` |
 | `order-fulfillment.yaml` | Fulfillment de pedido | Topic Kafka, paralelo, rollback |
 | `insurance-claim.yaml` | Reclamación de seguro | **Todas las funcionalidades** |
+| `customer-support-ticket.yaml` | Ticket de soporte al cliente | Condicional, `USER_TASK`, topic |
+| `employee-offboarding.yaml` | Baja de empleado | Paralelo, `USER_TASK`, topic |
+| `content-publishing.yaml` | Publicación de contenido | Paralelo, condicional, `USER_TASK`, `PROCESS` |
+| `kyc-verification.yaml` | Verificación KYC | Paralelo, condicional, `PROCESS`, `USER_TASK` |
+| `incident-management.yaml` | Gestión de incidencias IT | Condicional, paralelo, `USER_TASK`, rollback |
 
 ## Formato
 

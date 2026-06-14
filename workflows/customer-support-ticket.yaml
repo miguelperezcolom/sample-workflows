@@ -1,0 +1,64 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/miguelperezcolom/eventconductor/main/modules/workflow-engine/src/main/resources/workflow-definition-schema.json
+id: customer-support-ticket
+name: Customer Support Ticket
+version: 1
+status: ACTIVE
+steps:
+  - id: create-ticket
+    type: ACTION
+    name: Create support ticket
+    topic: support.ticket.created
+
+  - id: categorize
+    type: ACTION
+    name: Categorize and prioritize ticket
+    preconditionStepId: create-ticket
+    topic: support.ticket.categorize
+    timeout: PT30S
+    retries: 2
+
+  # High-priority tickets go to senior agent
+  - id: assign-senior-agent
+    type: USER_TASK
+    name: Assign to senior support agent
+    preconditionStepId: categorize
+    formId: agent-assignment-form
+    preconditionExpression: priority == 'HIGH'
+    timeout: PT2H
+
+  - id: assign-standard-agent
+    type: ACTION
+    name: Auto-assign to available agent
+    preconditionStepId: categorize
+    topic: support.ticket.assign
+    preconditionExpression: priority != 'HIGH'
+
+  - id: resolve-ticket
+    type: USER_TASK
+    name: Agent resolves ticket
+    preconditionStepId: assign-senior-agent
+    formId: ticket-resolution-form
+    timeout: P1D
+
+  - id: send-resolution
+    type: ACTION
+    name: Send resolution to customer
+    preconditionStepId: resolve-ticket
+    topic: notifications.email
+
+  - id: collect-feedback
+    type: ACTION
+    name: Send customer satisfaction survey
+    preconditionStepId: send-resolution
+    topic: support.feedback.request
+
+  - id: close-ticket
+    type: ACTION
+    name: Close ticket
+    preconditionStepId: collect-feedback
+    topic: support.ticket.closed
+
+  - id: end
+    type: END
+    name: Done
+    preconditionStepId: close-ticket
