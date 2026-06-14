@@ -1,0 +1,40 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/miguelperezcolom/eventconductor/main/modules/workflow-engine/src/main/resources/workflow-definition-schema.json
+id: new-employee-setup
+name: New Employee Setup
+version: 1
+status: ACTIVE
+steps:
+  - id: create-employee-record
+    type: ACTION
+    name: Create employee record
+
+  # Delegate IT provisioning to a dedicated child workflow
+  - id: it-setup
+    type: PROCESS
+    name: Run IT setup process
+    preconditionStepId: create-employee-record
+    childWorkflowDefinitionId: it-provisioning
+
+  # Delegate payroll configuration to a dedicated child workflow
+  - id: payroll-setup
+    type: PROCESS
+    name: Run payroll setup process
+    preconditionStepId: create-employee-record
+    childWorkflowDefinitionId: payroll-configuration
+    parallel: true
+
+  - id: schedule-orientation
+    type: USER_TASK
+    name: Schedule orientation meeting
+    preconditionStepId: it-setup
+    formId: orientation-scheduling-form
+
+  - id: send-welcome
+    type: ACTION
+    name: Send welcome notification
+    preconditionStepId: schedule-orientation
+
+  - id: end
+    type: END
+    name: Done
+    preconditionStepId: send-welcome

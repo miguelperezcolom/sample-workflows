@@ -15,6 +15,7 @@ workflows/
   payment-processing.yaml  # Procesamiento de pago con reintentos y timeout
   travel-booking.yaml      # Reserva de viaje con compensación (rollback)
   expense-approval.yaml    # Aprobación de gastos con tarea de usuario (USER_TASK)
+  new-employee-setup.yaml  # Alta de empleado con subprocesos (PROCESS)
 ```
 
 ## Formato
@@ -44,6 +45,19 @@ Los workflows se definen en YAML siguiendo el esquema de `eventconductor`. Cada 
 | `rollbackable` | `true` para activar compensación si el paso falla |
 | `compensationStepId` | Paso a ejecutar como compensación (rollback) |
 | `formId` | Identificador del formulario asociado (requerido en pasos `USER_TASK`) |
+| `childWorkflowDefinitionId` | Identificador del workflow hijo a ejecutar (requerido en pasos `PROCESS`) |
+
+## Workflows de ejemplo por funcionalidad
+
+| Funcionalidad | Workflow |
+|---------------|----------|
+| Pasos secuenciales básicos | `hello-world.yaml`, `approval.yaml`, `onboarding.yaml`, `order-processing.yaml` |
+| Pasos en paralelo (`parallel`) | `document-processing.yaml`, `new-employee-setup.yaml` |
+| Pasos condicionales (`preconditionExpression`) | `loan-approval.yaml`, `expense-approval.yaml` |
+| Reintentos y timeout (`retries`, `timeout`) | `payment-processing.yaml` |
+| Compensación / rollback (`rollbackable`, `compensationStepId`) | `travel-booking.yaml` |
+| Tarea de usuario (`USER_TASK`, `formId`) | `expense-approval.yaml` |
+| Subproceso (`PROCESS`, `childWorkflowDefinitionId`) | `new-employee-setup.yaml` |
 
 ## Ejemplo
 
