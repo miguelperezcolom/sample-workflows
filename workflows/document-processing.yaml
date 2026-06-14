@@ -1,0 +1,39 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/miguelperezcolom/eventconductor/main/modules/workflow-engine/src/main/resources/workflow-definition-schema.json
+id: document-processing
+name: Document Processing
+version: 1
+status: ACTIVE
+steps:
+  - id: upload
+    type: ACTION
+    name: Upload document
+
+  # These three steps run in parallel after upload
+  - id: validate
+    type: ACTION
+    name: Validate document
+    preconditionStepId: upload
+    parallel: true
+
+  - id: extract-metadata
+    type: ACTION
+    name: Extract metadata
+    preconditionStepId: upload
+    parallel: true
+
+  - id: generate-thumbnail
+    type: ACTION
+    name: Generate thumbnail
+    preconditionStepId: upload
+    parallel: true
+
+  # Resumes after all parallel steps complete
+  - id: store
+    type: ACTION
+    name: Store document
+    preconditionStepId: validate
+
+  - id: end
+    type: END
+    name: Done
+    preconditionStepId: store

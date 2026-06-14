@@ -9,7 +9,8 @@ workflows/
   hello-world.yaml      # Workflow básico de ejemplo
   approval.yaml         # Proceso de aprobación
   onboarding.yaml       # Alta de nuevo usuario
-  order-processing.yaml # Procesamiento de pedido
+  order-processing.yaml    # Procesamiento de pedido
+  document-processing.yaml # Procesamiento de documento con pasos en paralelo
 ```
 
 ## Formato
