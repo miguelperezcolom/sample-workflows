@@ -2,27 +2,28 @@
 
 Colección de definiciones de workflows de ejemplo para [eventconductor](https://github.com/miguelperezcolom/eventconductor).
 
-## Estructura
+## Workflows de ejemplo
 
-```
-workflows/
-  hello-world.yaml      # Workflow básico de ejemplo
-  approval.yaml         # Proceso de aprobación
-  onboarding.yaml       # Alta de nuevo usuario
-  order-processing.yaml    # Procesamiento de pedido
-  document-processing.yaml # Procesamiento de documento con pasos en paralelo
-  loan-approval.yaml       # Aprobación de préstamo con pasos condicionales
-  payment-processing.yaml  # Procesamiento de pago con reintentos y timeout
-  travel-booking.yaml      # Reserva de viaje con compensación (rollback)
-  expense-approval.yaml    # Aprobación de gastos con tarea de usuario (USER_TASK)
-  new-employee-setup.yaml  # Alta de empleado con subprocesos (PROCESS)
-  insurance-claim.yaml     # Reclamación de seguro (combina todas las funcionalidades)
-  order-fulfillment.yaml   # Fulfillment de pedido con topic en pasos ACTION (Kafka)
-```
+| Archivo | Descripción | Funcionalidades |
+|---------|-------------|-----------------|
+| `hello-world.yaml` | Workflow básico | Pasos secuenciales |
+| `approval.yaml` | Proceso de aprobación | Pasos secuenciales |
+| `onboarding.yaml` | Alta de nuevo usuario | Pasos secuenciales |
+| `order-processing.yaml` | Procesamiento de pedido | Pasos secuenciales |
+| `document-processing.yaml` | Procesamiento de documento | Pasos en paralelo |
+| `loan-approval.yaml` | Aprobación de préstamo | Pasos condicionales |
+| `payment-processing.yaml` | Procesamiento de pago | Reintentos, timeout |
+| `travel-booking.yaml` | Reserva de viaje | Compensación / rollback |
+| `expense-approval.yaml` | Aprobación de gastos | Pasos condicionales, `USER_TASK` |
+| `new-employee-setup.yaml` | Alta de empleado | Pasos en paralelo, `PROCESS` |
+| `order-fulfillment.yaml` | Fulfillment de pedido | Topic Kafka, paralelo, rollback |
+| `insurance-claim.yaml` | Reclamación de seguro | **Todas las funcionalidades** |
 
 ## Formato
 
-Los workflows se definen en YAML siguiendo el esquema de `eventconductor`. Cada archivo incluye:
+Los workflows se definen en YAML siguiendo el esquema de `eventconductor`.
+
+### Campos de workflow
 
 | Campo | Descripción |
 |-------|-------------|
@@ -30,7 +31,16 @@ Los workflows se definen en YAML siguiendo el esquema de `eventconductor`. Cada 
 | `name` | Nombre descriptivo |
 | `version` | Versión del workflow |
 | `status` | Estado (`ACTIVE`, etc.) |
-| `steps` | Lista de pasos (`ACTION`, `END`, …) |
+| `steps` | Lista de pasos |
+
+### Tipos de paso
+
+| Tipo | Descripción |
+|------|-------------|
+| `ACTION` | Publica un evento en un topic Kafka |
+| `USER_TASK` | Espera a que un usuario complete un formulario |
+| `PROCESS` | Ejecuta un workflow hijo y espera su resultado |
+| `END` | Finaliza el workflow |
 
 ### Campos de paso
 
@@ -38,31 +48,17 @@ Los workflows se definen en YAML siguiendo el esquema de `eventconductor`. Cada 
 |-------|-------------|
 | `id` | Identificador único del paso |
 | `name` | Nombre descriptivo |
-| `type` | Tipo de paso (`ACTION`, `END`, `USER_TASK`, `PROCESS`) |
+| `type` | Tipo de paso (ver tabla anterior) |
 | `preconditionStepId` | Paso que debe completarse antes de ejecutar éste |
 | `preconditionExpression` | Expresión JEXL sobre variables del proceso; omite el paso si devuelve `false` |
 | `parallel` | `true` para ejecutar en paralelo con otros pasos con el mismo `preconditionStepId` |
-| `timeout` | Tiempo máximo de ejecución (duración ISO 8601, p. ej. `PT30S`) |
-| `retries` | Número de reintentos automáticos en caso de fallo (por defecto `0`) |
+| `topic` | Topic Kafka al que se publica el evento (pasos `ACTION`) |
+| `formId` | Formulario asociado (pasos `USER_TASK`) |
+| `childWorkflowDefinitionId` | Workflow hijo a ejecutar (pasos `PROCESS`) |
+| `timeout` | Tiempo máximo de ejecución en ISO 8601 (p. ej. `PT30S`, `P2D`) |
+| `retries` | Reintentos automáticos en caso de fallo (por defecto `0`) |
 | `rollbackable` | `true` para activar compensación si el paso falla |
 | `compensationStepId` | Paso a ejecutar como compensación (rollback) |
-| `formId` | Identificador del formulario asociado (requerido en pasos `USER_TASK`) |
-| `childWorkflowDefinitionId` | Identificador del workflow hijo a ejecutar (requerido en pasos `PROCESS`) |
-| `topic` | Destino Kafka al que se publica el evento del paso (pasos `ACTION`) |
-
-## Workflows de ejemplo por funcionalidad
-
-| Funcionalidad | Workflow |
-|---------------|----------|
-| Pasos secuenciales básicos | `hello-world.yaml`, `approval.yaml`, `onboarding.yaml`, `order-processing.yaml` |
-| Pasos en paralelo (`parallel`) | `document-processing.yaml`, `new-employee-setup.yaml` |
-| Pasos condicionales (`preconditionExpression`) | `loan-approval.yaml`, `expense-approval.yaml` |
-| Reintentos y timeout (`retries`, `timeout`) | `payment-processing.yaml` |
-| Compensación / rollback (`rollbackable`, `compensationStepId`) | `travel-booking.yaml` |
-| Tarea de usuario (`USER_TASK`, `formId`) | `expense-approval.yaml` |
-| Subproceso (`PROCESS`, `childWorkflowDefinitionId`) | `new-employee-setup.yaml` |
-| Topic Kafka (`topic`) | `order-fulfillment.yaml` |
-| Todas las funcionalidades combinadas | `insurance-claim.yaml` |
 
 ## Ejemplo
 
