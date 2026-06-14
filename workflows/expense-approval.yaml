@@ -1,0 +1,43 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/miguelperezcolom/eventconductor/main/modules/workflow-engine/src/main/resources/workflow-definition-schema.json
+id: expense-approval
+name: Expense Approval
+version: 1
+status: ACTIVE
+steps:
+  - id: submit-expense
+    type: ACTION
+    name: Submit expense report
+
+  - id: manager-review
+    type: USER_TASK
+    name: Manager reviews expense report
+    preconditionStepId: submit-expense
+    formId: expense-review-form
+    timeout: P2D
+
+  - id: approve
+    type: ACTION
+    name: Approve expense
+    preconditionStepId: manager-review
+    preconditionExpression: decision == 'APPROVED'
+
+  - id: reject
+    type: ACTION
+    name: Reject expense
+    preconditionStepId: manager-review
+    preconditionExpression: decision == 'REJECTED'
+
+  - id: reimburse
+    type: ACTION
+    name: Reimburse employee
+    preconditionStepId: approve
+
+  - id: notify-employee
+    type: ACTION
+    name: Notify employee
+    preconditionStepId: reimburse
+
+  - id: end
+    type: END
+    name: Done
+    preconditionStepId: notify-employee

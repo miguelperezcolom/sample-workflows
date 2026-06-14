@@ -14,6 +14,7 @@ workflows/
   loan-approval.yaml       # Aprobación de préstamo con pasos condicionales
   payment-processing.yaml  # Procesamiento de pago con reintentos y timeout
   travel-booking.yaml      # Reserva de viaje con compensación (rollback)
+  expense-approval.yaml    # Aprobación de gastos con tarea de usuario (USER_TASK)
 ```
 
 ## Formato
@@ -42,6 +43,7 @@ Los workflows se definen en YAML siguiendo el esquema de `eventconductor`. Cada 
 | `retries` | Número de reintentos automáticos en caso de fallo (por defecto `0`) |
 | `rollbackable` | `true` para activar compensación si el paso falla |
 | `compensationStepId` | Paso a ejecutar como compensación (rollback) |
+| `formId` | Identificador del formulario asociado (requerido en pasos `USER_TASK`) |
 
 ## Ejemplo
 
