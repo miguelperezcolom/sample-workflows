@@ -1,0 +1,99 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/miguelperezcolom/eventconductor/main/modules/workflow-engine/src/main/resources/workflow-definition-schema.json
+id: insurance-claim
+name: Insurance Claim Processing
+version: 1
+status: ACTIVE
+steps:
+
+  # --- Sequential: submit and validate ---
+
+  - id: submit-claim
+    type: ACTION
+    name: Submit insurance claim
+
+  - id: validate-claim
+    type: ACTION
+    name: Validate claim data
+    preconditionStepId: submit-claim
+    timeout: PT15S
+    retries: 2
+
+  # --- Parallel: assess damage and check policy coverage simultaneously ---
+
+  - id: assess-damage
+    type: PROCESS
+    name: Assess damage
+    preconditionStepId: validate-claim
+    childWorkflowDefinitionId: damage-assessment
+    parallel: true
+    rollbackable: true
+    compensationStepId: cancel-assessment
+
+  - id: check-coverage
+    type: ACTION
+    name: Check policy coverage
+    preconditionStepId: validate-claim
+    parallel: true
+    timeout: PT20S
+    retries: 3
+
+  # --- Conditional: manual adjuster review only for high-value claims ---
+
+  - id: adjuster-review
+    type: USER_TASK
+    name: Adjuster reviews claim
+    preconditionStepId: assess-damage
+    formId: claim-adjuster-form
+    timeout: P3D
+    preconditionExpression: claimAmount > 5000
+
+  # --- Conditional approval branches ---
+
+  - id: auto-approve
+    type: ACTION
+    name: Auto-approve claim
+    preconditionStepId: check-coverage
+    preconditionExpression: claimAmount <= 5000
+
+  - id: manual-approve
+    type: ACTION
+    name: Approve claim after adjuster review
+    preconditionStepId: adjuster-review
+    preconditionExpression: adjusterDecision == 'APPROVED'
+
+  - id: reject-claim
+    type: ACTION
+    name: Reject claim
+    preconditionStepId: adjuster-review
+    preconditionExpression: adjusterDecision == 'REJECTED'
+
+  # --- Payment with retries, timeout and rollback ---
+
+  - id: process-payment
+    type: ACTION
+    name: Process claim payment
+    preconditionStepId: auto-approve
+    timeout: PT30S
+    retries: 3
+    rollbackable: true
+    compensationStepId: refund-payment
+
+  - id: notify-customer
+    type: ACTION
+    name: Notify customer of outcome
+    preconditionStepId: process-payment
+
+  - id: end
+    type: END
+    name: Done
+    preconditionStepId: notify-customer
+
+  # --- Compensation steps ---
+
+  - id: cancel-assessment
+    type: ACTION
+    name: Cancel damage assessment
+
+  - id: refund-payment
+    type: ACTION
+    name: Refund claim payment

@@ -16,6 +16,7 @@ workflows/
   travel-booking.yaml      # Reserva de viaje con compensación (rollback)
   expense-approval.yaml    # Aprobación de gastos con tarea de usuario (USER_TASK)
   new-employee-setup.yaml  # Alta de empleado con subprocesos (PROCESS)
+  insurance-claim.yaml     # Reclamación de seguro (combina todas las funcionalidades)
 ```
 
 ## Formato
@@ -58,6 +59,7 @@ Los workflows se definen en YAML siguiendo el esquema de `eventconductor`. Cada 
 | Compensación / rollback (`rollbackable`, `compensationStepId`) | `travel-booking.yaml` |
 | Tarea de usuario (`USER_TASK`, `formId`) | `expense-approval.yaml` |
 | Subproceso (`PROCESS`, `childWorkflowDefinitionId`) | `new-employee-setup.yaml` |
+| Todas las funcionalidades combinadas | `insurance-claim.yaml` |
 
 ## Ejemplo
 
