@@ -28,7 +28,20 @@ Los workflows se definen en YAML siguiendo el esquema de `eventconductor`. Cada 
 | `status` | Estado (`ACTIVE`, etc.) |
 | `steps` | Lista de pasos (`ACTION`, `END`, …) |
 
-Los pasos se encadenan mediante `preconditionStepId`, que indica qué paso debe completarse antes de ejecutar el actual.
+### Campos de paso
+
+| Campo | Descripción |
+|-------|-------------|
+| `id` | Identificador único del paso |
+| `name` | Nombre descriptivo |
+| `type` | Tipo de paso (`ACTION`, `END`, `USER_TASK`, `PROCESS`) |
+| `preconditionStepId` | Paso que debe completarse antes de ejecutar éste |
+| `preconditionExpression` | Expresión JEXL sobre variables del proceso; omite el paso si devuelve `false` |
+| `parallel` | `true` para ejecutar en paralelo con otros pasos con el mismo `preconditionStepId` |
+| `timeout` | Tiempo máximo de ejecución (duración ISO 8601, p. ej. `PT30S`) |
+| `retries` | Número de reintentos automáticos en caso de fallo (por defecto `0`) |
+| `rollbackable` | `true` para activar compensación si el paso falla |
+| `compensationStepId` | Paso a ejecutar como compensación (rollback) |
 
 ## Ejemplo
 
