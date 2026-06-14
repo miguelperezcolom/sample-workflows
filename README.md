@@ -11,6 +11,7 @@ workflows/
   onboarding.yaml       # Alta de nuevo usuario
   order-processing.yaml    # Procesamiento de pedido
   document-processing.yaml # Procesamiento de documento con pasos en paralelo
+  loan-approval.yaml       # Aprobación de préstamo con pasos condicionales
 ```
 
 ## Formato

@@ -1,0 +1,43 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/miguelperezcolom/eventconductor/main/modules/workflow-engine/src/main/resources/workflow-definition-schema.json
+id: loan-approval
+name: Loan Approval
+version: 1
+status: ACTIVE
+steps:
+  - id: submit
+    type: ACTION
+    name: Submit loan application
+
+  - id: evaluate
+    type: ACTION
+    name: Evaluate credit score
+    preconditionStepId: submit
+
+  # Branch A: credit score high enough → auto-approve
+  - id: auto-approve
+    type: ACTION
+    name: Auto-approve loan
+    preconditionStepId: evaluate
+    preconditionExpression: creditScore >= 700
+
+  - id: notify-approved
+    type: ACTION
+    name: Notify applicant - approved
+    preconditionStepId: auto-approve
+
+  # Branch B: credit score too low → manual review
+  - id: manual-review
+    type: ACTION
+    name: Request manual review
+    preconditionStepId: evaluate
+    preconditionExpression: creditScore < 700
+
+  - id: notify-rejected
+    type: ACTION
+    name: Notify applicant - rejected
+    preconditionStepId: manual-review
+
+  - id: end
+    type: END
+    name: Done
+    preconditionStepId: notify-approved
