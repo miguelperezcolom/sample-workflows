@@ -17,6 +17,7 @@ workflows/
   expense-approval.yaml    # Aprobación de gastos con tarea de usuario (USER_TASK)
   new-employee-setup.yaml  # Alta de empleado con subprocesos (PROCESS)
   insurance-claim.yaml     # Reclamación de seguro (combina todas las funcionalidades)
+  order-fulfillment.yaml   # Fulfillment de pedido con topic en pasos ACTION (Kafka)
 ```
 
 ## Formato
@@ -47,6 +48,7 @@ Los workflows se definen en YAML siguiendo el esquema de `eventconductor`. Cada 
 | `compensationStepId` | Paso a ejecutar como compensación (rollback) |
 | `formId` | Identificador del formulario asociado (requerido en pasos `USER_TASK`) |
 | `childWorkflowDefinitionId` | Identificador del workflow hijo a ejecutar (requerido en pasos `PROCESS`) |
+| `topic` | Destino Kafka al que se publica el evento del paso (pasos `ACTION`) |
 
 ## Workflows de ejemplo por funcionalidad
 
@@ -59,6 +61,7 @@ Los workflows se definen en YAML siguiendo el esquema de `eventconductor`. Cada 
 | Compensación / rollback (`rollbackable`, `compensationStepId`) | `travel-booking.yaml` |
 | Tarea de usuario (`USER_TASK`, `formId`) | `expense-approval.yaml` |
 | Subproceso (`PROCESS`, `childWorkflowDefinitionId`) | `new-employee-setup.yaml` |
+| Topic Kafka (`topic`) | `order-fulfillment.yaml` |
 | Todas las funcionalidades combinadas | `insurance-claim.yaml` |
 
 ## Ejemplo

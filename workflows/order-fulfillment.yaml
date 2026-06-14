@@ -1,0 +1,68 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/miguelperezcolom/eventconductor/main/modules/workflow-engine/src/main/resources/workflow-definition-schema.json
+id: order-fulfillment
+name: Order Fulfillment
+version: 1
+status: ACTIVE
+steps:
+  - id: receive-order
+    type: ACTION
+    name: Receive order
+    topic: orders.received
+
+  - id: reserve-stock
+    type: ACTION
+    name: Reserve stock
+    preconditionStepId: receive-order
+    topic: inventory.reserve
+    timeout: PT20S
+    retries: 3
+    rollbackable: true
+    compensationStepId: release-stock
+
+  - id: charge-customer
+    type: ACTION
+    name: Charge customer
+    preconditionStepId: reserve-stock
+    topic: payments.charge
+    timeout: PT30S
+    retries: 3
+    rollbackable: true
+    compensationStepId: refund-customer
+
+  - id: notify-warehouse
+    type: ACTION
+    name: Notify warehouse to pack order
+    preconditionStepId: charge-customer
+    topic: warehouse.pack
+    parallel: true
+
+  - id: notify-customer
+    type: ACTION
+    name: Notify customer of confirmation
+    preconditionStepId: charge-customer
+    topic: notifications.email
+    parallel: true
+
+  - id: ship-order
+    type: ACTION
+    name: Ship order
+    preconditionStepId: notify-warehouse
+    topic: warehouse.ship
+    timeout: PT1H
+    retries: 2
+
+  - id: end
+    type: END
+    name: Done
+    preconditionStepId: ship-order
+
+  # Compensation steps
+  - id: release-stock
+    type: ACTION
+    name: Release reserved stock
+    topic: inventory.release
+
+  - id: refund-customer
+    type: ACTION
+    name: Refund customer payment
+    topic: payments.refund
