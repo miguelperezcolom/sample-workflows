@@ -1,0 +1,83 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/miguelperezcolom/eventconductor/main/modules/workflow-engine/src/main/resources/workflow-definition-schema.json
+id: student-enrollment
+name: Student Enrollment
+version: 1
+status: ACTIVE
+steps:
+  - id: submit-application
+    type: ACTION
+    name: Student submits enrollment application
+    topic: enrollment.application.submitted
+
+  - id: verify-documents
+    type: PROCESS
+    name: Verify academic credentials and documents
+    preconditionStepId: submit-application
+    childWorkflowDefinitionId: document-verification
+    timeout: P5D
+    retries: 2
+
+  # Run entrance exam and interview in parallel
+  - id: entrance-exam
+    type: PROCESS
+    name: Administer entrance exam
+    preconditionStepId: verify-documents
+    childWorkflowDefinitionId: online-exam
+    parallel: true
+    timeout: P7D
+
+  - id: admissions-interview
+    type: USER_TASK
+    name: Admissions committee interview
+    preconditionStepId: verify-documents
+    formId: admissions-interview-form
+    parallel: true
+    preconditionExpression: programType == 'POSTGRADUATE'
+    timeout: P7D
+
+  - id: evaluate-application
+    type: USER_TASK
+    name: Admissions committee evaluates full application
+    preconditionStepId: entrance-exam
+    formId: application-evaluation-form
+    timeout: P5D
+
+  - id: reject-application
+    type: ACTION
+    name: Send rejection letter
+    preconditionStepId: evaluate-application
+    topic: enrollment.application.rejected
+    preconditionExpression: admissionDecision == 'REJECTED'
+
+  - id: send-offer-letter
+    type: ACTION
+    name: Send admission offer letter
+    preconditionStepId: evaluate-application
+    topic: enrollment.offer.sent
+    preconditionExpression: admissionDecision == 'ACCEPTED'
+
+  - id: confirm-enrollment
+    type: USER_TASK
+    name: Student confirms enrollment and pays fees
+    preconditionStepId: send-offer-letter
+    formId: enrollment-confirmation-form
+    timeout: P14D
+
+  - id: assign-resources
+    type: ACTION
+    name: Assign student ID, email and learning platform access
+    preconditionStepId: confirm-enrollment
+    topic: enrollment.resources.assign
+    parallel: true
+
+  - id: schedule-orientation
+    type: ACTION
+    name: Schedule orientation session
+    preconditionStepId: confirm-enrollment
+    topic: enrollment.orientation.schedule
+    parallel: true
+
+  - id: end
+    type: END
+    name: Done
+    preconditionStepId: assign-resources

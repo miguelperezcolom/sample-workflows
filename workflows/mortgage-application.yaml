@@ -1,0 +1,99 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/miguelperezcolom/eventconductor/main/modules/workflow-engine/src/main/resources/workflow-definition-schema.json
+id: mortgage-application
+name: Mortgage Application
+version: 1
+status: ACTIVE
+steps:
+  - id: submit-application
+    type: ACTION
+    name: Customer submits mortgage application
+    topic: mortgage.application.submitted
+
+  - id: collect-documents
+    type: USER_TASK
+    name: Collect required documents from applicant
+    preconditionStepId: submit-application
+    formId: document-collection-form
+    timeout: P14D
+
+  # Run credit check and affordability assessment in parallel
+  - id: credit-check
+    type: PROCESS
+    name: Run credit bureau check
+    preconditionStepId: collect-documents
+    childWorkflowDefinitionId: credit-bureau-check
+    parallel: true
+    timeout: PT1H
+    retries: 3
+
+  - id: affordability-assessment
+    type: ACTION
+    name: Calculate affordability and debt-to-income ratio
+    preconditionStepId: collect-documents
+    topic: mortgage.affordability.assess
+    parallel: true
+    timeout: PT30M
+    retries: 2
+
+  - id: property-appraisal
+    type: PROCESS
+    name: Commission property appraisal
+    preconditionStepId: credit-check
+    childWorkflowDefinitionId: property-appraisal
+    timeout: P7D
+
+  - id: underwriting
+    type: USER_TASK
+    name: Underwriter reviews full application
+    preconditionStepId: property-appraisal
+    formId: underwriting-form
+    timeout: P5D
+
+  - id: reject-application
+    type: ACTION
+    name: Send rejection letter to applicant
+    preconditionStepId: underwriting
+    topic: mortgage.application.rejected
+    preconditionExpression: underwritingDecision == 'REJECTED'
+
+  - id: issue-offer
+    type: ACTION
+    name: Issue mortgage offer letter
+    preconditionStepId: underwriting
+    topic: mortgage.offer.issued
+    preconditionExpression: underwritingDecision == 'APPROVED'
+    retries: 2
+
+  - id: legal-completion
+    type: USER_TASK
+    name: Solicitor completes legal checks and exchange
+    preconditionStepId: issue-offer
+    formId: legal-completion-form
+    timeout: P30D
+
+  - id: disburse-funds
+    type: ACTION
+    name: Disburse mortgage funds
+    preconditionStepId: legal-completion
+    topic: mortgage.funds.disbursed
+    timeout: PT1H
+    retries: 3
+    rollbackable: true
+    compensationStepId: reverse-disbursement
+
+  - id: notify-completion
+    type: ACTION
+    name: Notify all parties of completion
+    preconditionStepId: disburse-funds
+    topic: mortgage.completion.notify
+
+  - id: end
+    type: END
+    name: Done
+    preconditionStepId: notify-completion
+
+  # Compensation step
+  - id: reverse-disbursement
+    type: ACTION
+    name: Reverse fund disbursement
+    topic: mortgage.funds.reversed

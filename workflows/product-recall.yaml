@@ -1,0 +1,90 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/miguelperezcolom/eventconductor/main/modules/workflow-engine/src/main/resources/workflow-definition-schema.json
+id: product-recall
+name: Product Recall
+version: 1
+status: ACTIVE
+steps:
+  - id: detect-defect
+    type: ACTION
+    name: Detect and register product defect
+    topic: recall.defect.detected
+
+  - id: assess-risk
+    type: USER_TASK
+    name: Quality team assesses safety risk
+    preconditionStepId: detect-defect
+    formId: risk-assessment-form
+    timeout: PT4H
+
+  # Notify regulators and halt production in parallel
+  - id: notify-regulators
+    type: ACTION
+    name: Notify regulatory authorities
+    preconditionStepId: assess-risk
+    topic: recall.regulators.notify
+    preconditionExpression: riskLevel == 'HIGH'
+    parallel: true
+    timeout: PT1H
+    retries: 3
+
+  - id: halt-production
+    type: ACTION
+    name: Halt production line
+    preconditionStepId: assess-risk
+    topic: manufacturing.production.halt
+    parallel: true
+
+  - id: identify-batches
+    type: PROCESS
+    name: Identify all affected product batches
+    preconditionStepId: halt-production
+    childWorkflowDefinitionId: batch-traceability
+    timeout: PT2H
+    retries: 2
+
+  - id: notify-distributors
+    type: ACTION
+    name: Notify distributors and retailers
+    preconditionStepId: identify-batches
+    topic: recall.distributors.notify
+    parallel: true
+    retries: 3
+
+  - id: notify-customers
+    type: ACTION
+    name: Notify affected customers
+    preconditionStepId: identify-batches
+    topic: recall.customers.notify
+    parallel: true
+    retries: 3
+
+  - id: manage-returns
+    type: PROCESS
+    name: Manage product returns and replacements
+    preconditionStepId: notify-customers
+    childWorkflowDefinitionId: returns-management
+    timeout: P30D
+
+  - id: root-cause-analysis
+    type: USER_TASK
+    name: Conduct root cause analysis
+    preconditionStepId: manage-returns
+    formId: root-cause-form
+    timeout: P14D
+
+  - id: corrective-action
+    type: USER_TASK
+    name: Define and apply corrective actions
+    preconditionStepId: root-cause-analysis
+    formId: corrective-action-form
+
+  - id: resume-production
+    type: ACTION
+    name: Resume production after approval
+    preconditionStepId: corrective-action
+    topic: manufacturing.production.resume
+
+  - id: end
+    type: END
+    name: Done
+    preconditionStepId: resume-production

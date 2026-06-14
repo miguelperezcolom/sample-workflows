@@ -23,6 +23,12 @@ Colección de definiciones de workflows de ejemplo para [eventconductor](https:/
 | `content-publishing.yaml` | Publicación de contenido | Paralelo, condicional, `USER_TASK`, `PROCESS` |
 | `kyc-verification.yaml` | Verificación KYC | Paralelo, condicional, `PROCESS`, `USER_TASK` |
 | `incident-management.yaml` | Gestión de incidencias IT | Condicional, paralelo, `USER_TASK`, rollback |
+| `patient-admission.yaml` | Admisión de paciente (Sanidad) | Condicional, paralelo, `USER_TASK`, topic |
+| `recruitment.yaml` | Proceso de selección (RRHH) | Paralelo, `USER_TASK`, `PROCESS`, topic |
+| `mortgage-application.yaml` | Solicitud de hipoteca (Banca) | Paralelo, `PROCESS`, `USER_TASK`, rollback |
+| `product-recall.yaml` | Retirada de producto (Fabricación) | Paralelo, condicional, `PROCESS`, `USER_TASK` |
+| `student-enrollment.yaml` | Matrícula universitaria (Educación) | Paralelo, condicional, `PROCESS`, `USER_TASK` |
+| `supplier-onboarding.yaml` | Alta de proveedor (Compras) | Paralelo, condicional, `PROCESS`, `USER_TASK` |
 
 ## Formato
 

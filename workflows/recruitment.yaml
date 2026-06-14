@@ -1,0 +1,91 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/miguelperezcolom/eventconductor/main/modules/workflow-engine/src/main/resources/workflow-definition-schema.json
+id: recruitment
+name: Recruitment Process
+version: 1
+status: ACTIVE
+steps:
+  - id: publish-job
+    type: ACTION
+    name: Publish job posting
+    topic: recruitment.job.published
+
+  - id: screen-applications
+    type: USER_TASK
+    name: HR screens incoming applications
+    preconditionStepId: publish-job
+    formId: application-screening-form
+    timeout: P14D
+
+  - id: reject-application
+    type: ACTION
+    name: Send rejection to unsuccessful candidates
+    preconditionStepId: screen-applications
+    topic: recruitment.candidate.rejected
+    preconditionExpression: screeningResult == 'REJECTED'
+
+  - id: phone-screening
+    type: USER_TASK
+    name: HR conducts phone screening
+    preconditionStepId: screen-applications
+    formId: phone-screening-form
+    preconditionExpression: screeningResult == 'SHORTLISTED'
+    timeout: P7D
+
+  # Run technical test and reference check in parallel
+  - id: technical-test
+    type: PROCESS
+    name: Send and evaluate technical test
+    preconditionStepId: phone-screening
+    childWorkflowDefinitionId: technical-assessment
+    parallel: true
+    timeout: P5D
+
+  - id: reference-check
+    type: ACTION
+    name: Contact candidate references
+    preconditionStepId: phone-screening
+    topic: recruitment.references.check
+    parallel: true
+    timeout: P7D
+    retries: 2
+
+  - id: panel-interview
+    type: USER_TASK
+    name: Panel interview with hiring team
+    preconditionStepId: technical-test
+    formId: panel-interview-form
+    timeout: P7D
+
+  - id: make-offer
+    type: USER_TASK
+    name: Prepare and send job offer
+    preconditionStepId: panel-interview
+    formId: offer-form
+    preconditionExpression: interviewResult == 'PASS'
+    timeout: P3D
+
+  - id: background-check
+    type: PROCESS
+    name: Run background check
+    preconditionStepId: make-offer
+    childWorkflowDefinitionId: background-verification
+    timeout: P5D
+    retries: 1
+
+  - id: confirm-start-date
+    type: USER_TASK
+    name: Confirm start date and contract signing
+    preconditionStepId: background-check
+    formId: contract-signing-form
+    timeout: P7D
+
+  - id: trigger-onboarding
+    type: ACTION
+    name: Trigger employee onboarding workflow
+    preconditionStepId: confirm-start-date
+    topic: hr.onboarding.start
+
+  - id: end
+    type: END
+    name: Done
+    preconditionStepId: trigger-onboarding

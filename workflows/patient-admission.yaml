@@ -1,0 +1,88 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/miguelperezcolom/eventconductor/main/modules/workflow-engine/src/main/resources/workflow-definition-schema.json
+id: patient-admission
+name: Patient Admission
+version: 1
+status: ACTIVE
+steps:
+  - id: register-patient
+    type: ACTION
+    name: Register patient at reception
+    topic: hospital.patient.registered
+
+  - id: triage
+    type: USER_TASK
+    name: Nurse performs triage assessment
+    preconditionStepId: register-patient
+    formId: triage-form
+    timeout: PT30M
+
+  # Critical patients go directly to emergency
+  - id: emergency-care
+    type: ACTION
+    name: Transfer to emergency care
+    preconditionStepId: triage
+    topic: hospital.emergency.transfer
+    preconditionExpression: triageLevel == 'CRITICAL'
+
+  - id: assign-doctor
+    type: USER_TASK
+    name: Assign doctor and ward
+    preconditionStepId: triage
+    formId: doctor-assignment-form
+    preconditionExpression: triageLevel != 'CRITICAL'
+    timeout: PT1H
+
+  # Run diagnostics in parallel
+  - id: blood-tests
+    type: ACTION
+    name: Order blood tests
+    preconditionStepId: assign-doctor
+    topic: hospital.lab.blood-tests
+    parallel: true
+    timeout: PT2H
+    retries: 2
+
+  - id: imaging
+    type: ACTION
+    name: Schedule imaging (X-ray / MRI)
+    preconditionStepId: assign-doctor
+    topic: hospital.imaging.schedule
+    parallel: true
+    timeout: PT4H
+
+  - id: diagnosis
+    type: USER_TASK
+    name: Doctor reviews results and establishes diagnosis
+    preconditionStepId: blood-tests
+    formId: diagnosis-form
+    timeout: PT8H
+
+  - id: treatment-plan
+    type: USER_TASK
+    name: Define treatment plan
+    preconditionStepId: diagnosis
+    formId: treatment-plan-form
+
+  - id: start-treatment
+    type: ACTION
+    name: Start treatment
+    preconditionStepId: treatment-plan
+    topic: hospital.treatment.start
+
+  - id: discharge
+    type: USER_TASK
+    name: Discharge patient
+    preconditionStepId: start-treatment
+    formId: discharge-form
+    timeout: P30D
+
+  - id: send-discharge-summary
+    type: ACTION
+    name: Send discharge summary to patient and GP
+    preconditionStepId: discharge
+    topic: hospital.discharge.summary
+
+  - id: end
+    type: END
+    name: Done
+    preconditionStepId: send-discharge-summary

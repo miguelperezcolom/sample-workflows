@@ -1,0 +1,91 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/miguelperezcolom/eventconductor/main/modules/workflow-engine/src/main/resources/workflow-definition-schema.json
+id: supplier-onboarding
+name: Supplier Onboarding
+version: 1
+status: ACTIVE
+steps:
+  - id: submit-application
+    type: ACTION
+    name: Supplier submits onboarding application
+    topic: procurement.supplier.applied
+
+  # Run due diligence checks in parallel
+  - id: financial-due-diligence
+    type: PROCESS
+    name: Financial due diligence
+    preconditionStepId: submit-application
+    childWorkflowDefinitionId: financial-due-diligence
+    parallel: true
+    timeout: P7D
+
+  - id: compliance-check
+    type: PROCESS
+    name: Compliance and sanctions check
+    preconditionStepId: submit-application
+    childWorkflowDefinitionId: compliance-verification
+    parallel: true
+    timeout: P3D
+    retries: 2
+
+  - id: quality-audit
+    type: USER_TASK
+    name: Quality team audits supplier facilities
+    preconditionStepId: submit-application
+    formId: quality-audit-form
+    parallel: true
+    timeout: P14D
+
+  - id: risk-assessment
+    type: USER_TASK
+    name: Procurement assesses overall supplier risk
+    preconditionStepId: financial-due-diligence
+    formId: supplier-risk-form
+    timeout: P3D
+
+  - id: reject-supplier
+    type: ACTION
+    name: Reject supplier application
+    preconditionStepId: risk-assessment
+    topic: procurement.supplier.rejected
+    preconditionExpression: riskLevel == 'HIGH'
+
+  - id: negotiate-contract
+    type: USER_TASK
+    name: Negotiate terms and conditions
+    preconditionStepId: risk-assessment
+    formId: contract-negotiation-form
+    preconditionExpression: riskLevel != 'HIGH'
+    timeout: P14D
+
+  - id: sign-contract
+    type: ACTION
+    name: Execute supplier contract
+    preconditionStepId: negotiate-contract
+    topic: procurement.contract.signed
+
+  # Run system integration and training in parallel
+  - id: system-integration
+    type: PROCESS
+    name: Set up supplier portal and EDI integration
+    preconditionStepId: sign-contract
+    childWorkflowDefinitionId: supplier-integration-setup
+    parallel: true
+    timeout: P7D
+
+  - id: training
+    type: ACTION
+    name: Send onboarding training materials
+    preconditionStepId: sign-contract
+    topic: procurement.supplier.training
+    parallel: true
+
+  - id: activate-supplier
+    type: ACTION
+    name: Activate supplier in procurement system
+    preconditionStepId: system-integration
+    topic: procurement.supplier.activated
+
+  - id: end
+    type: END
+    name: Done
+    preconditionStepId: activate-supplier
