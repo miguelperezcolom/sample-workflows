@@ -1,0 +1,50 @@
+# sample-workflows
+
+Colección de definiciones de workflows de ejemplo para [eventconductor](https://github.com/miguelperezcolom/eventconductor).
+
+## Estructura
+
+```
+workflows/
+  hello-world.yaml   # Workflow básico de ejemplo
+```
+
+## Formato
+
+Los workflows se definen en YAML siguiendo el esquema de `eventconductor`. Cada archivo incluye:
+
+| Campo | Descripción |
+|-------|-------------|
+| `id` | Identificador único del workflow |
+| `name` | Nombre descriptivo |
+| `version` | Versión del workflow |
+| `status` | Estado (`ACTIVE`, etc.) |
+| `steps` | Lista de pasos (`ACTION`, `END`, …) |
+
+Los pasos se encadenan mediante `preconditionStepId`, que indica qué paso debe completarse antes de ejecutar el actual.
+
+## Ejemplo
+
+```yaml
+id: hello-world
+name: Hello World
+version: 1
+status: ACTIVE
+steps:
+  - id: greet
+    type: ACTION
+    name: Greet the user
+  - id: farewell
+    type: ACTION
+    name: Say goodbye
+    preconditionStepId: greet
+  - id: end
+    type: END
+    name: Done
+    preconditionStepId: farewell
+```
+
+## Schema
+
+El schema completo está disponible en:
+`https://raw.githubusercontent.com/miguelperezcolom/eventconductor/main/modules/workflow-engine/src/main/resources/workflow-definition-schema.json`
